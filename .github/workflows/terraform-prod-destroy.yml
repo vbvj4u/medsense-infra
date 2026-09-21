@@ -1,0 +1,21 @@
+name: Terraform - prod (destroy)
+
+# Manual only, two-step: this run first computes and publishes a
+# `terraform plan -destroy` (see the run's summary), then pauses for
+# the "prod-destroy" GitHub Environment's required reviewers before
+# actually destroying anything.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "prod" to confirm you want to destroy the prod environment'
+        required: true
+
+jobs:
+  destroy:
+    if: inputs.confirm == 'prod'
+    uses: ./.github/workflows/_terraform-destroy-reusable.yml
+    with:
+      environment: prod
+    secrets: inherit

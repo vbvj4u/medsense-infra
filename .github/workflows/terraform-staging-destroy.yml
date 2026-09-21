@@ -1,0 +1,21 @@
+name: Terraform - staging (destroy)
+
+# Manual only, two-step: this run first computes and publishes a
+# `terraform plan -destroy` (see the run's summary), then pauses for
+# the "staging-destroy" GitHub Environment's required reviewers before
+# actually destroying anything.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "staging" to confirm you want to destroy the staging environment'
+        required: true
+
+jobs:
+  destroy:
+    if: inputs.confirm == 'staging'
+    uses: ./.github/workflows/_terraform-destroy-reusable.yml
+    with:
+      environment: staging
+    secrets: inherit

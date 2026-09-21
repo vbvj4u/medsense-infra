@@ -1,0 +1,21 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Backend config (account-id specific, generated from *.example)
+backend.hcl
+
+# Placeholder lambda zips built by modules/lambda_backend
+**/.placeholder.zip
+
+# OS / editor
+.DS_Store
+*.swp

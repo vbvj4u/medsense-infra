@@ -1,0 +1,22 @@
+name: Terraform - dev (plan)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+    paths:
+      - "accounts/dev/**"
+      - "modules/**"
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to (re-)plan against"
+        required: true
+
+jobs:
+  plan:
+    uses: ./.github/workflows/_terraform-plan-reusable.yml
+    with:
+      environment: dev
+      pr_number: ${{ github.event.pull_request.number || inputs.pr_number }}
+    secrets: inherit

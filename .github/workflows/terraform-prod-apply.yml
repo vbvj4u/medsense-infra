@@ -1,0 +1,23 @@
+name: Terraform - prod (apply)
+
+# Manual only. Applies the exact plan produced for the given PR by
+# "Terraform - prod (plan)" - review that plan (in the PR comment or
+# the plan run's summary) before running this. The `prod` GitHub
+# Environment's required reviewers gate the actual apply step (see
+# _terraform-apply-reusable.yml).
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number whose reviewed plan should be applied"
+        required: true
+
+jobs:
+  apply:
+    uses: ./.github/workflows/_terraform-apply-reusable.yml
+    with:
+      environment: prod
+      pr_number: ${{ inputs.pr_number }}
+      plan_workflow_file: terraform-prod-plan.yml
+    secrets: inherit

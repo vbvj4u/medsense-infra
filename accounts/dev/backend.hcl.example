@@ -1,0 +1,4 @@
+# Copy to backend.hcl (gitignored) and fill in with the outputs from
+# `terraform apply` under global/bootstrap.
+bucket         = "medsense-tfstate-dev-123456789012"
+dynamodb_table = "medsense-terraform-locks-dev"

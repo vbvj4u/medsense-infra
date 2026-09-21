@@ -1,0 +1,83 @@
+name: _terraform-apply-reusable
+
+# Applies a previously reviewed plan artifact - never re-plans, never
+# runs unattended. The `environment: <env>` on the job is what creates
+# the manual approval gate: configure that GitHub Environment
+# (Settings -> Environments -> <env> -> Required reviewers) and this
+# job pauses in "Waiting" state until an approved reviewer clicks
+# Approve in the Actions UI, before a single AWS credential is even
+# requested.
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      pr_number:
+        required: true
+        type: string
+      plan_workflow_file:
+        description: "Filename of the matching *-plan.yml workflow, used to locate its artifact."
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+  actions: read # required to look up the plan workflow's artifact
+
+env:
+  TF_VERSION: "1.9.8"
+  AWS_REGION: "ap-southeast-2"
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }} # <-- the manual-approval gate
+    defaults:
+      run:
+        working-directory: accounts/${{ inputs.environment }}
+    steps:
+      # Grab the plan artifact first (before AWS creds / the pinned
+      # checkout below) purely to read commit_sha.txt so we know
+      # exactly what to check out. `dawidd6/action-download-artifact`
+      # finds it by workflow file + PR number, since GitHub's own
+      # artifact APIs don't support cross-run lookup by PR.
+      - name: Download reviewed plan artifact
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: ${{ inputs.plan_workflow_file }}
+          pr: ${{ inputs.pr_number }}
+          name: tfplan-${{ inputs.environment }}-pr${{ inputs.pr_number }}
+          path: /tmp/plan-artifact
+          check_artifacts: true
+
+      - name: Read pinned commit
+        id: pin
+        run: echo "sha=$(cat /tmp/plan-artifact/commit_sha.txt)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pin.outputs.sha }}
+
+      - name: Place plan file
+        run: cp /tmp/plan-artifact/tfplan accounts/${{ inputs.environment }}/tfplan
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_CI_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+
+      - name: terraform apply (reviewed plan, unchanged)
+        run: terraform apply -input=false -auto-approve tfplan

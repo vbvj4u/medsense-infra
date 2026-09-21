@@ -1,0 +1,99 @@
+name: _terraform-destroy-reusable
+
+# Manual, two-step destroy: first job computes `terraform plan -destroy`
+# and writes it to the run summary (nothing is torn down yet); second
+# job is gated by the "<env>-destroy" GitHub Environment's required
+# reviewers and only then runs the destroy. Deliberately a separate
+# Environment from apply's (Settings -> Environments -> <env>-destroy)
+# so destroy approval is never accidentally covered by whoever is
+# already an approver for ordinary applies.
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: "1.9.8"
+  AWS_REGION: "ap-southeast-2"
+
+jobs:
+  destroy-plan:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: accounts/${{ inputs.environment }}
+    outputs:
+      run-id: ${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_CI_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+
+      - name: terraform plan -destroy
+        run: |
+          terraform plan -destroy -no-color -input=false -out=destroy.tfplan
+          terraform show -no-color destroy.tfplan > destroy.txt
+          echo "## terraform plan -destroy - ${{ inputs.environment }}" >> "$GITHUB_STEP_SUMMARY"
+          echo '**Review this before approving the destroy-apply job below.**' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat destroy.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: destroy-plan-${{ inputs.environment }}-${{ github.run_id }}
+          path: accounts/${{ inputs.environment }}/destroy.tfplan
+          retention-days: 3
+
+  destroy-apply:
+    needs: destroy-plan
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}-destroy # <-- the manual-approval gate
+    defaults:
+      run:
+        working-directory: accounts/${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: destroy-plan-${{ inputs.environment }}-${{ needs.destroy-plan.outputs.run-id }}
+          path: accounts/${{ inputs.environment }}
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_TERRAFORM_CI_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: terraform init
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="dynamodb_table=${{ secrets.TF_LOCK_TABLE }}"
+
+      - name: terraform apply (destroy plan, unchanged)
+        run: terraform apply -input=false -auto-approve destroy.tfplan

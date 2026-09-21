@@ -1,0 +1,21 @@
+name: Terraform - dev (destroy)
+
+# Manual only, two-step: this run first computes and publishes a
+# `terraform plan -destroy` (see the run's summary), then pauses for
+# the "dev-destroy" GitHub Environment's required reviewers before
+# actually destroying anything.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "dev" to confirm you want to destroy the dev environment'
+        required: true
+
+jobs:
+  destroy:
+    if: inputs.confirm == 'dev'
+    uses: ./.github/workflows/_terraform-destroy-reusable.yml
+    with:
+      environment: dev
+    secrets: inherit
