@@ -12,6 +12,11 @@ on:
       pr_number:
         description: "PR number whose reviewed plan should be applied"
         required: true
+        
+permissions:
+  id-token: write
+  contents: read
+  actions: read
 
 jobs:
   apply:

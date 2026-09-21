@@ -13,6 +13,11 @@ on:
         description: "PR number whose reviewed plan should be applied"
         required: true
 
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
 jobs:
   apply:
     uses: ./.github/workflows/_terraform-apply-reusable.yml

@@ -12,6 +12,11 @@ on:
       pr_number:
         description: "PR number to (re-)plan against"
         required: true
+        
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
 
 jobs:
   plan:
