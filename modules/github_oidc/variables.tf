@@ -15,10 +15,9 @@ variable "github_repo" {
   type        = string
 }
 
-variable "allowed_branches" {
-  description = "Branches allowed to assume this role."
+variable "allowed_subject_claims" {
+  description = "The part of the sub claim after \"repo:<org>/<repo>:\", one per workflow shape, e.g. \"ref:refs/heads/main\", \"pull_request\", \"environment:dev\"."
   type        = list(string)
-  default     = ["main"]
 }
 
 variable "role_name" {

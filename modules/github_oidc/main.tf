@@ -24,6 +24,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 locals {
   oidc_provider_arn = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : var.oidc_provider_arn
+  repo_pattern       = "${replace(var.github_repo, "/", "*/")}*"
 }
 
 data "aws_iam_policy_document" "assume_role" {
@@ -44,7 +45,7 @@ data "aws_iam_policy_document" "assume_role" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = [for b in var.allowed_branches : "repo:${var.github_repo}:ref:refs/heads/${b}"]
+      values = [for c in var.allowed_subject_claims : "repo:${local.repo_pattern}:${c}"]
     }
   }
 }

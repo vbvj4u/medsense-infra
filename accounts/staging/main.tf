@@ -129,7 +129,12 @@ module "github_oidc_infra" {
 
   create_oidc_provider = true # only the first module instance in the account creates it
   github_repo           = var.github_org_repos.terraform
-  allowed_branches       = ["main"]
+  allowed_subject_claims = [
+    "pull_request",
+    "ref:refs/heads/main",
+    "environment:${var.environment}",
+    "environment:${var.environment}-destroy",
+  ]
   role_name              = "${local.name_prefix}-terraform-ci"
 
   permissions_policy_json = data.aws_iam_policy_document.terraform_ci_permissions.json
@@ -143,7 +148,7 @@ module "github_oidc_backend" {
   create_oidc_provider = false
   oidc_provider_arn     = module.github_oidc_infra.oidc_provider_arn
   github_repo           = var.github_org_repos.backend
-  allowed_branches       = ["main"]
+  allowed_subject_claims = ["environment:${var.environment}"]
   role_name              = "${local.name_prefix}-backend-deploy"
 
   permissions_policy_json = data.aws_iam_policy_document.backend_deploy_permissions.json
@@ -157,7 +162,7 @@ module "github_oidc_frontend" {
   create_oidc_provider = false
   oidc_provider_arn     = module.github_oidc_infra.oidc_provider_arn
   github_repo           = var.github_org_repos.frontend
-  allowed_branches       = ["main"]
+  allowed_subject_claims = ["environment:${var.environment}"]
   role_name              = "${local.name_prefix}-frontend-deploy"
 
   permissions_policy_json = data.aws_iam_policy_document.frontend_deploy_permissions.json
@@ -212,6 +217,7 @@ data "aws_iam_policy_document" "backend_deploy_permissions" {
       "lambda:UpdateFunctionCode",
       "lambda:UpdateFunctionConfiguration",
       "lambda:GetFunction",
+      "lambda:GetFunctionConfiguration",
       "lambda:PublishVersion",
     ]
     resources = [module.lambda_backend.function_arn]
