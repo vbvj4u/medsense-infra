@@ -3,9 +3,9 @@ environment = "dev"
 
 # Set these once the actual GitHub repos exist.
 github_org_repos = {
-  terraform = "your-org/medsense-infra"
-  backend   = "your-org/medsense-backend"
-  frontend  = "your-org/medsense-frontend"
+  terraform = "vbvj4u/medsense-infra"
+  backend   = "vbvj4u/medsense-backend"
+  frontend  = "vbvj4u/medsense-frontend"
 }
 
 # Single-account dev setup: leave null. Fill in only if dev is fronted
