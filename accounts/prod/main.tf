@@ -66,15 +66,15 @@ module "lambda_backend" {
   source = "../../modules/lambda_backend"
 
   function_name      = "${local.name_prefix}-backend"
-  handler             = "app.handler" # Mangum-wrapped FastAPI app, see medsense-backend
-  runtime             = "python3.12"
-  memory_size         = 256
-  timeout             = 10
-  dynamodb_table_arn  = module.dynamodb.table_arn
+  handler            = "app.handler" # Mangum-wrapped FastAPI app, see medsense-backend
+  runtime            = "python3.12"
+  memory_size        = 256
+  timeout            = 10
+  dynamodb_table_arn = module.dynamodb.table_arn
 
   environment_variables = {
-    DYNAMODB_TABLE      = module.dynamodb.table_name
-    ENVIRONMENT         = var.environment
+    DYNAMODB_TABLE         = module.dynamodb.table_name
+    ENVIRONMENT            = var.environment
     MEDICINE_API_KEY_PARAM = module.secrets.parameter_names["medicine-api-key"]
   }
 
@@ -101,11 +101,11 @@ resource "aws_iam_role_policy" "lambda_secrets_access" {
 module "api_gateway" {
   source = "../../modules/api_gateway"
 
-  api_name              = "${local.name_prefix}-api"
-  stage_name             = "$default"
-  lambda_invoke_arn      = module.lambda_backend.invoke_arn
-  lambda_function_name   = module.lambda_backend.function_name
-  cors_allowed_origins   = ["https://${module.frontend_hosting.distribution_domain_name}", "http://localhost:5173"]
+  api_name             = "${local.name_prefix}-api"
+  stage_name           = "$default"
+  lambda_invoke_arn    = module.lambda_backend.invoke_arn
+  lambda_function_name = module.lambda_backend.function_name
+  cors_allowed_origins = ["https://${module.frontend_hosting.distribution_domain_name}", "http://localhost:5173"]
 
   tags = local.common_tags
 }
@@ -128,15 +128,15 @@ module "github_oidc_infra" {
   source = "../../modules/github_oidc"
 
   create_oidc_provider = true # only the first module instance in the account creates it
-  oidc_provider_arn     = module.github_oidc_infra.oidc_provider_arn
-  github_repo           = var.github_org_repos.terraform
+  oidc_provider_arn    = module.github_oidc_infra.oidc_provider_arn
+  github_repo          = var.github_org_repos.terraform
   allowed_subject_claims = [
     "pull_request",
     "ref:refs/heads/main",
     "environment:${var.environment}",
     "environment:${var.environment}-destroy",
   ]
-  role_name              = "${local.name_prefix}-terraform-ci"
+  role_name = "${local.name_prefix}-terraform-ci"
 
   permissions_policy_json = data.aws_iam_policy_document.terraform_ci_permissions.json
 
@@ -146,8 +146,8 @@ module "github_oidc_infra" {
 module "github_oidc_backend" {
   source = "../../modules/github_oidc"
 
-  create_oidc_provider = false
-  github_repo           = var.github_org_repos.backend
+  create_oidc_provider   = false
+  github_repo            = var.github_org_repos.backend
   allowed_subject_claims = ["environment:${var.environment}"]
   role_name              = "${local.name_prefix}-backend-deploy"
 
@@ -159,9 +159,9 @@ module "github_oidc_backend" {
 module "github_oidc_frontend" {
   source = "../../modules/github_oidc"
 
-  create_oidc_provider = false
-  oidc_provider_arn     = module.github_oidc_infra.oidc_provider_arn
-  github_repo           = var.github_org_repos.frontend
+  create_oidc_provider   = false
+  oidc_provider_arn      = module.github_oidc_infra.oidc_provider_arn
+  github_repo            = var.github_org_repos.frontend
   allowed_subject_claims = ["environment:${var.environment}"]
   role_name              = "${local.name_prefix}-frontend-deploy"
 

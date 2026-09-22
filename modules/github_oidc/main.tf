@@ -15,8 +15,8 @@
 resource "aws_iam_openid_connect_provider" "github" {
   count = var.create_oidc_provider ? 1 : 0
 
-  url             = "https://token.actions.githubusercontent.com"
-  client_id_list  = ["sts.amazonaws.com"]
+  url            = "https://token.actions.githubusercontent.com"
+  client_id_list = ["sts.amazonaws.com"]
   # GitHub's OIDC root CA thumbprint (Actions rotates the leaf cert, not
   # this root, so this rarely needs updating).
   thumbprint_list = ["6938fd4d98bab03faadb97b34396831e3780aea1"]
@@ -24,7 +24,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 locals {
   oidc_provider_arn = var.create_oidc_provider ? aws_iam_openid_connect_provider.github[0].arn : var.oidc_provider_arn
-  repo_pattern       = "${replace(var.github_repo, "/", "*/")}*"
+  repo_pattern      = "${replace(var.github_repo, "/", "*/")}*"
 }
 
 data "aws_iam_policy_document" "assume_role" {
@@ -45,7 +45,7 @@ data "aws_iam_policy_document" "assume_role" {
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values = [for c in var.allowed_subject_claims : "repo:${local.repo_pattern}:${c}"]
+      values   = [for c in var.allowed_subject_claims : "repo:${local.repo_pattern}:${c}"]
     }
   }
 }
