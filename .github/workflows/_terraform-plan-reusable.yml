@@ -90,14 +90,20 @@ jobs:
           retention-days: 14
 
       - name: Comment plan on PR
+        continue-on-error: true
         uses: actions/github-script@v7
+        env:
+          PR_NUMBER: ${{ inputs.pr_number }}
+          ENVIRONMENT: ${{ inputs.environment }}
         with:
           script: |
             const fs = require('fs');
-            const plan = fs.readFileSync('accounts/${{ inputs.environment }}/plan.txt', 'utf8').slice(-60000);
+            const prNumber = parseInt(process.env.PR_NUMBER, 10);
+            const environment = process.env.ENVIRONMENT;
+            const plan = fs.readFileSync(`accounts/${environment}/plan.txt`, 'utf8').slice(-60000);
             github.rest.issues.createComment({
-              issue_number: ${{ inputs.pr_number }},
+              issue_number: prNumber,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `### Terraform plan - ${{ inputs.environment }}\nSaved as build artifact \`tfplan-${{ inputs.environment }}-pr${{ inputs.pr_number }}\`. Review it, then run the "Terraform - ${{ inputs.environment }} (apply)" workflow with this PR number to apply **exactly this plan**.\n\n<details><summary>Show plan</summary>\n\n\`\`\`\n${plan}\n\`\`\`\n</details>`
+              body: `### Terraform plan - ${environment}\nSaved as build artifact \`tfplan-${environment}-pr${prNumber}\`. Review it, then run the "Terraform - ${environment} (apply)" workflow with this PR number to apply **exactly this plan**.\n\n<details><summary>Show plan</summary>\n\n\`\`\`\n${plan}\n\`\`\`\n</details>`
             });
