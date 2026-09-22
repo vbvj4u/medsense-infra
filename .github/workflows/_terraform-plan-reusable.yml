@@ -34,6 +34,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Debug role ARN
+        run: |
+          if [ -z "$ROLE_ARN" ]; then echo "SECRET IS EMPTY"; else echo "SECRET IS SET"; fi
+        env:
+          ROLE_ARN: ${{ secrets.AWS_TERRAFORM_CI_ROLE_ARN }}
+
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_TERRAFORM_CI_ROLE_ARN }}
