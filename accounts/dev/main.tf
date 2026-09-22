@@ -202,6 +202,13 @@ data "aws_iam_policy_document" "terraform_ci_permissions" {
       "iam:CreateOpenIDConnectProvider",
       "iam:GetOpenIDConnectProvider",
       "iam:TagOpenIDConnectProvider",
+      "ssm:GetParameter",
+      "ssm:GetParameters",
+      "ssm:PutParameter",
+      "ssm:DeleteParameter",
+      "ssm:DescribeParameters",
+      "ssm:ListTagsForResource",
+      "ssm:AddTagsToResource",
       "logs:*",
       "cloudwatch:*",
     ]
