@@ -55,21 +55,20 @@ resource "aws_cloudwatch_log_group" "lambda" {
   tags              = var.tags
 }
 
-# The function is provisioned here with a tiny placeholder package.
+# The function is provisioned here with a tiny placeholder package,
+# committed to the repo (placeholder.zip) rather than built at
+# plan/apply time by an `archive_file` data source. Plan and apply run
+# as separate jobs on separate, ephemeral GitHub Actions runners -
+# apply only replays the reviewed plan's resource actions, it doesn't
+# re-run data sources, so a file `archive_file` generated on the plan
+# runner would never exist on the apply runner (this happened in
+# practice: "no such file or directory" reading .placeholder.zip). A
+# git-tracked file is present on both, since both run actions/checkout.
+#
 # The backend application repo's own CI pipeline (assuming the
 # github_oidc backend-deploy role) pushes real code afterwards via
 # `aws lambda update-function-code`, so Terraform never needs to know
 # about individual app releases.
-data "archive_file" "placeholder" {
-  type        = "zip"
-  output_path = "${path.module}/.placeholder.zip"
-
-  source {
-    content  = "def handler(event, context):\n    return {'statusCode': 200, 'body': 'medsense backend placeholder - deploy real code via CI'}\n"
-    filename = "app.py"
-  }
-}
-
 resource "aws_lambda_function" "this" {
   function_name = var.function_name
   role          = aws_iam_role.lambda_exec.arn
@@ -78,8 +77,8 @@ resource "aws_lambda_function" "this" {
   memory_size   = var.memory_size
   timeout       = var.timeout
 
-  filename         = data.archive_file.placeholder.output_path
-  source_code_hash = data.archive_file.placeholder.output_base64sha256
+  filename         = "${path.module}/placeholder.zip"
+  source_code_hash = filebase64sha256("${path.module}/placeholder.zip")
 
   environment {
     variables = var.environment_variables
