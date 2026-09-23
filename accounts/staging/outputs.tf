@@ -23,21 +23,6 @@ output "backend_lambda_function_name" {
   value       = module.lambda_backend.function_name
 }
 
-output "backend_deploy_role_arn" {
-  description = "IAM role the backend repo's GitHub Actions workflow assumes."
-  value       = module.github_oidc_backend.role_arn
-}
-
-output "frontend_deploy_role_arn" {
-  description = "IAM role the frontend repo's GitHub Actions workflow assumes."
-  value       = module.github_oidc_frontend.role_arn
-}
-
-output "terraform_ci_role_arn" {
-  description = "IAM role this repo's own GitHub Actions workflow assumes to plan/apply."
-  value       = module.github_oidc_infra.role_arn
-}
-
 output "dynamodb_table_name" {
   value = module.dynamodb.table_name
 }
