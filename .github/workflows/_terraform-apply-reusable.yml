@@ -55,6 +55,7 @@ jobs:
 
       - name: Read pinned commit
         id: pin
+        working-directory: . # runs before checkout - accounts/<env> doesn't exist yet
         run: echo "sha=$(cat /tmp/plan-artifact/commit_sha.txt)" >> "$GITHUB_OUTPUT"
 
       - uses: actions/checkout@v4
@@ -62,7 +63,7 @@ jobs:
           ref: ${{ steps.pin.outputs.sha }}
 
       - name: Place plan file
-        run: cp /tmp/plan-artifact/tfplan accounts/${{ inputs.environment }}/tfplan
+        run: cp /tmp/plan-artifact/tfplan tfplan
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
