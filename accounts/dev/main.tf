@@ -3,6 +3,8 @@
 ############################################
 # Wires the reusable modules together into the actual 3-tier stack.
 # network is intentionally NOT called - see modules/network/main.tf.
+#
+# (No-op text change to exercise the dev plan/apply workflow end to end.)
 
 locals {
   name_prefix = "medsense-${var.environment}"
