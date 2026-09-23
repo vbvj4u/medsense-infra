@@ -81,3 +81,25 @@ jobs:
 
       - name: terraform apply (reviewed plan, unchanged)
         run: terraform apply -input=false -auto-approve tfplan
+
+      # Pushes the values the backend/frontend repos' own CI needs
+      # into their "${{ inputs.environment }}" GitHub Environment
+      # secrets, straight from what was just applied - so nobody has
+      # to copy them by hand after every apply. Requires a PAT (not
+      # the default GITHUB_TOKEN, which can't write secrets on other
+      # repos) with "Secrets: read and write" on medsense-backend and
+      # medsense-frontend, stored here as CROSS_REPO_SECRETS_TOKEN.
+      # Repo names match global/bootstrap/terraform.tfvars' github_org_repos.
+      - name: Sync deploy outputs to backend/frontend repo secrets
+        env:
+          GH_TOKEN: ${{ secrets.CROSS_REPO_SECRETS_TOKEN }}
+          TARGET_ENV: ${{ inputs.environment }}
+        run: |
+          set -euo pipefail
+          gh secret set AWS_DEPLOY_ROLE_ARN  --repo vbvj4u/medsense-backend  --env "$TARGET_ENV" --body "$(terraform output -raw backend_deploy_role_arn)"
+          gh secret set LAMBDA_FUNCTION_NAME --repo vbvj4u/medsense-backend  --env "$TARGET_ENV" --body "$(terraform output -raw backend_lambda_function_name)"
+
+          gh secret set AWS_DEPLOY_ROLE_ARN        --repo vbvj4u/medsense-frontend --env "$TARGET_ENV" --body "$(terraform output -raw frontend_deploy_role_arn)"
+          gh secret set S3_BUCKET_NAME             --repo vbvj4u/medsense-frontend --env "$TARGET_ENV" --body "$(terraform output -raw frontend_bucket_name)"
+          gh secret set CLOUDFRONT_DISTRIBUTION_ID --repo vbvj4u/medsense-frontend --env "$TARGET_ENV" --body "$(terraform output -raw frontend_distribution_id)"
+          gh secret set VITE_API_BASE_URL          --repo vbvj4u/medsense-frontend --env "$TARGET_ENV" --body "$(terraform output -raw api_endpoint)"

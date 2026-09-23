@@ -31,3 +31,15 @@ output "secrets_parameter_names" {
   description = "SSM Parameter Store paths for app secrets - set real values with `aws ssm put-parameter --overwrite`."
   value       = module.secrets.parameter_names
 }
+
+# Deterministic (IAM role ARNs are name-based, not random) - built the
+# same way global/bootstrap builds these roles' own names, so this
+# apply job can push them to the backend/frontend repos' secrets
+# without needing access to bootstrap's separate, local-only state.
+output "backend_deploy_role_arn" {
+  value = "arn:aws:iam::${local.account_id}:role/${local.name_prefix}-backend-deploy"
+}
+
+output "frontend_deploy_role_arn" {
+  value = "arn:aws:iam::${local.account_id}:role/${local.name_prefix}-frontend-deploy"
+}
