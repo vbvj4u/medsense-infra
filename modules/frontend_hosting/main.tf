@@ -7,7 +7,12 @@
 
 resource "aws_s3_bucket" "frontend" {
   bucket = var.bucket_name
-  tags   = var.tags
+
+  # Deployed site assets are synced in outside Terraform, so the bucket
+  # is rarely empty - allow destroy to remove objects instead of failing.
+  force_destroy = true
+
+  tags = var.tags
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend" {
