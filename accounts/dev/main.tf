@@ -5,6 +5,7 @@
 # network is intentionally NOT called - see modules/network/main.tf.
 #
 # (No-op text change to exercise the dev plan/apply workflow end to end.)
+# (Dummy PR to verify the CI flow - 2026-09-24, safe to close/delete after checking.)
 
 locals {
   name_prefix = "medsense-${var.environment}"
